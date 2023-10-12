@@ -42,9 +42,9 @@ export const getServerSideProps = (async () => {
     console.error(error);
     return {
       props: {
-        loginsOverview: null,
+        loginsOverview: 0,
         signupsOverview: [],
-        upgradesOverview: null,
+        upgradesOverview: 0,
       },
     };
   }
