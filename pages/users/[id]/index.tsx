@@ -11,6 +11,7 @@ import styled from "styled-components";
 import LoginActivityTable from "../../../components/LoginActivityTable";
 import UpgradesTable from "../../../components/UpgragesTable";
 import moment from "moment";
+import { Login, Signup, Upgrade } from "../../../types";
 
 const Title = styled.h2`
   font-size: 1.5rem;
@@ -36,49 +37,45 @@ const TableGrid = styled.div`
 
 export const getServerSideProps = (async (context) => {
   const { id } = context.query;
-  try {
-    const res = await Promise.allSettled([
-      fetch(absoluteUrl(`/api/logins`)),
-      fetch(absoluteUrl('/api/signups')),
-      fetch(absoluteUrl('/api/upgrades')),
-    ]);
-    const data = await Promise.all(
-      res.map(async (resp) => {
-        if (resp.status === "fulfilled") {
-          return await resp.value.json();
-        } else {
-          console.error(resp.reason);
-          return null;
-        }
-      })
-    );
-    
-    const userLogins = getUserLoginData(data[0], id);
-    const userDetail = getUserDetail(data[1], id) || null;
-    const userUpgrades = getUserUpgrades(data[2], id);
+  let userLogins: Login[] = []
+  let userDetail: Signup = null
+  let userUpgrades: Upgrade[] = []
 
-    return {
-      props: {
-        userLogins,
-        userDetail,
-        userUpgrades,
-      },
-    };
+  try {
+    const loginResp = await fetch(absoluteUrl(`/api/logins`))
+    const loginData = await loginResp.json()
+    userLogins = getUserLoginData(loginData, id);
   } catch (error) {
     console.error(error);
-    return {
-      props: {
-        userLogins: [],
-        userDetail: null,
-        userUpgrades: [],
-      },
-    };
   }
+
+  try {
+    const signupResp = await fetch(absoluteUrl(`/api/signups`))
+    const signupData = await signupResp.json()
+    userDetail = getUserDetail(signupData, id) || null;
+  } catch (error) {
+    console.error(error);
+  }
+
+  try {
+    const upgradesResp = await fetch(absoluteUrl(`/api/upgrades`))
+    const upgradesData = await upgradesResp.json()
+    userUpgrades = getUserUpgrades(upgradesData, id);
+  } catch (error) {
+    console.error(error);
+  }
+
+  return {
+    props: {
+      userLogins,
+      userDetail,
+      userUpgrades,
+    },
+  };
 })
 
 export default function Users({ userLogins, userDetail, userUpgrades }) {
   const router = useRouter();
-  const { id } = router.query;
 
   const handleBack = () => {
     router.back();

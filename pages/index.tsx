@@ -9,45 +9,45 @@ import Cards from "../components/cards";
 import { absoluteUrl, getLastDaysData } from "../lib/helper";
 import { useRouter } from "next/router";
 import SignUpTable from "../components/SignUpTable";
-import { HandleOnClick } from "../types";
+import { HandleOnClick, Login, Signup, Upgrade } from "../types";
 
 export const getServerSideProps = (async () => {
+
+  let overviewLoginsData: number = 0
+  let overviewUpgradesData: number = 0
+  let overviewSignupsData: Signup[] = []
+
   try {
-    const res = await Promise.allSettled([
-      fetch(absoluteUrl(`/api/logins`)),
-      fetch(absoluteUrl('/api/signups')),
-      fetch(absoluteUrl('/api/upgrades')),
-    ]);
-    const data = await Promise.all(res.map(async (resp) => {
-      if (resp.status === "fulfilled") {
-        return await resp.value.json();
-      } else {
-        console.error(resp.reason);
-        return null;
-      }
-    }));
-
-    const overviewLoginsData = getLastDaysData(data[0], 'date');
-    const overviewSignupsData = getLastDaysData(data[1], 'signupDate');
-    const overviewUpgradesData = getLastDaysData(data[2], 'upgradeDate');
-
-    return {
-      props: {
-        loginsOverview: overviewLoginsData.length,
-        signupsOverview: overviewSignupsData,
-        upgradesOverview: overviewUpgradesData.length,
-      },
-    };
+    const loginResp = await fetch(absoluteUrl(`/api/logins`))
+    const loginData = await loginResp.json()
+    overviewLoginsData = getLastDaysData(loginData, 'date').length;
   } catch (error) {
     console.error(error);
-    return {
-      props: {
-        loginsOverview: 0,
-        signupsOverview: [],
-        upgradesOverview: 0,
-      },
-    };
   }
+
+  try {
+    const signupResp = await fetch(absoluteUrl(`/api/signups`))
+    const signupData = await signupResp.json()
+    overviewSignupsData = getLastDaysData(signupData, 'signupDate');
+  } catch (error) {
+    console.error(error);
+  }
+
+  try {
+    const upgradesResp = await fetch(absoluteUrl(`/api/upgrades`))
+    const upgradesData = await upgradesResp.json()
+    overviewUpgradesData = getLastDaysData(upgradesData, 'upgradeDate').length;
+  } catch (error) {
+    console.error(error);
+  }
+
+  return {
+    props: {
+      loginsOverview: overviewLoginsData,
+      signupsOverview: overviewSignupsData,
+      upgradesOverview: overviewUpgradesData,
+    },
+  };
 })
 
 const Home = ({ loginsOverview, signupsOverview, upgradesOverview }) => {
@@ -68,9 +68,9 @@ const Home = ({ loginsOverview, signupsOverview, upgradesOverview }) => {
       <Main>
           <Title>Overview</Title>
           <SummaryGrid>
-            <Cards title="New Signups" bottomText="in last week" value={signupsOverview.length}  />
-            <Cards title="New Logins" bottomText="in last week" value={loginsOverview}  />
-            <Cards title="New Upgrades" bottomText="in last week" value={upgradesOverview}  />
+            <Cards title="New Signups" bottomText="since last 7 days" value={signupsOverview.length}  />
+            <Cards title="New Logins" bottomText="since last 7 days" value={loginsOverview}  />
+            <Cards title="New Upgrades" bottomText="since last 7 days" value={upgradesOverview}  />
           </SummaryGrid>
           <SignUpTable signups={signupsOverview} handleOnClick={handleOnClick}  />
         </Main>
