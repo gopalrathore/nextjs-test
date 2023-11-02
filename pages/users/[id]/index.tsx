@@ -47,6 +47,7 @@ export const getServerSideProps = (async (context) => {
     userLogins = getUserLoginData(loginData, id);
   } catch (error) {
     console.error(error);
+    
   }
 
   try {
